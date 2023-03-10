@@ -33,8 +33,7 @@ class Sensor:
             else:
                 if box[1] >= self.monitor["height"] or box[0] >= self.monitor["width"] or box[0] + box[2] > self.monitor["width"] or  box[1] + box[3] > self.monitor["height"]:
                     raise Exception("One or more of the given dimensions exceed the monitor dimensions")
-                if box[0] > box[2] or box[1] > box[3]:
-                    raise Exception("Dimensions don't match")
+                
                 self.box = {"left":box[0], "top":box[1], "width":box[2], "height":box[3]}
             
         
@@ -45,7 +44,7 @@ class Sensor:
         
 
 #Example
-s = Sensor(1, (0,0,1920,500))
+s = Sensor(1, (720,100,1000,500))
 
 while True:
     img = s.grab_img()
