@@ -40,7 +40,7 @@ class Sensor:
         
 
 #Example
-s = Sensor(2,0,1079)
+s = Sensor(2,0,0,500)
 
 while True:
     img = s.grab_img()
