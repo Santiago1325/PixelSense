@@ -1,17 +1,40 @@
 import numpy as np
 import cv2
 from mss import mss
-from PIL import Image, ImageGrab
+from abc import ABC, abstractmethod
 
-class Sensor:
-# Base class of the Sensor. Will recieve the monitor and the area that will screenshot
-# with top = 0 and left = 0 being the upper left corner of the screen.
-# Leave width or height as full to use the full widht or height of the screen
-# If only the monitor is provided it will take a full screenshot
-#(left, top, width, height)
+#ToDo
+#MaskSensor
+#ConvolutionalSensor
 
 
-    def __init__(self, monitor_num, box = None):
+class Sensor(ABC):
+
+    @abstractmethod
+    def __init__(self):
+        ...
+                    
+    @abstractmethod
+    def grab_data(self):
+        ...
+    
+    @abstractmethod
+    def trigger(self):
+        ...
+        
+
+        
+class ImageSensor(Sensor):
+    """
+    Base class of the Sensor. Will recieve the monitor and the area that will screenshot
+    with top = 0 and left = 0 being the upper left corner of the screen.
+    and width or height being the extension of each dimension
+    If only the monitor is provided it will take a full screenshot
+    box = (left, top, width, height)
+    """   
+    
+    
+    def __init__(self, monitor_num, box=None):
         
         #Screenshot taker
         self.sct = mss()
@@ -36,15 +59,12 @@ class Sensor:
                 
                 self.box = {"left":box[0], "top":box[1], "width":box[2], "height":box[3]}
             
-        
-    #Take screenshot
-    def grab_img(self):
+    def grab_data(self):
         img = self.sct.grab(self.box)
         return np.array(img)
-        
-
+    
 #Example
-s = Sensor(1, (720,100,1000,500))
+s = ImageSensor(1, (720,100,1000,500))
 
 while True:
     img = s.grab_img()
