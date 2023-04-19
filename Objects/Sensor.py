@@ -45,7 +45,7 @@ class MaskSensor(Sensor):
             mask (Numpy array): Mask that will be used for detection.
             treshold (float): Treshold that will be used to trigger the sensor. 
             background (Numpy array, optional): Color of the background of the mask. Defaults to np.array([0,0,0]).
-            box (Box, optional): Region of the screen that wiil be captured. Defaults to None.
+            box (Box, optional): Region of the screen that wiil be captured. Defaults to None (Whole screen).
 
         Raises:
             Exception: Happens when the number given exceeds the number of available monitors
