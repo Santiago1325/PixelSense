@@ -2,34 +2,32 @@ import numpy as np
 import cv2
 from mss import mss
 from abc import ABC, abstractmethod
+from pydantic import BaseModel
+
+class Box(BaseModel):
+    """Pydantic base class for a Box object that defines the region
+    that a sensor will look at
+
+    Args:
+        BaseModel (_type_): _description_
+    """
+    left: int
+    top: int
+    width : int
+    height: int
+
 
 class Sensor(ABC):
     """
     Base abstract class for all sensors
     """
-
-    @abstractmethod
-    def __init__(self):
-        """
-        Init method
-        """
-
-                  
-    @abstractmethod
-    def grab_data(self):
-        """
-        Method to grab data from the sensor
-        """  
     
     @abstractmethod
-    def trigger(self):
+    def trigger(self) -> bool:
         """
         Method to trigger the sensor given a certain condition
         """
 
-        
-
-        
 class MaskSensor(Sensor):
     """
     Class representing a Mask Sensor
@@ -39,23 +37,23 @@ class MaskSensor(Sensor):
     given by the mask. If it does the sensor will be triggered
     """
 
-    def __init__(self, monitor_num, mask = None, treshold = None, background = np.array([0,0,0]),box=None):
+    def __init__(self, monitor_num: int, mask: np.array, treshold: float, box: Box =None ,background: np.array = np.array([0,0,0])):
         """Init method of mask sensor
 
         Args:
             monitor_num (int): Number of monitor to capture
-            mask (Numpy array, optional): Mask that will be used for detection. Defaults to None.
-            treshold (float, optional): Treshold that will be used to trigger the sensor. Defaults to None.
+            mask (Numpy array): Mask that will be used for detection.
+            treshold (float): Treshold that will be used to trigger the sensor. 
             background (Numpy array, optional): Color of the background of the mask. Defaults to np.array([0,0,0]).
-            box (tuple, optional): Region of the screen that wiil be captured. Defaults to None.
+            box (Box, optional): Region of the screen that wiil be captured. Defaults to None.
 
         Raises:
             Exception: Happens when the number given exceeds the number of available monitors
-            Exception: Occurs when the Box argument is not a tuple
-            Exception: Raises when the Box argument has more than 4 elements
+            Exception: Occurs when the Box argument is not a Box object
             Exception: Happens when or more of the given dimensions exceed the monitor dimensions
             Exception: Happens if mask and region dimensions are differents
         """
+        
 
         self.sct = mss()
         self.mask = mask.astype(float)
@@ -70,20 +68,18 @@ class MaskSensor(Sensor):
         if not box:
             self.box = self.monitor
         else:
-            if type(box) != tuple:
-                raise Exception("Box must be a tuple")
-            elif len(box) > 4 or len(box) < 4:
-                raise Exception("Tuple len must have 4 elements")    
+            if not isinstance(box, Box):
+                raise Exception("Use Pydantic class Box")   
             else:
-                if box[1] >= self.monitor["height"] or box[0] >= self.monitor["width"] or box[0] + box[2] > self.monitor["width"] or  box[1] + box[3] > self.monitor["height"]:
+                if box.height >= self.monitor["height"] or box.width >= self.monitor["width"] or box.left + box.width > self.monitor["width"] or box.top + box.height > self.monitor["height"]:
                     raise Exception("One or more of the given dimensions exceed the monitor dimensions")
                 
-                self.box = {"left":box[0] + self.monitor["left"], "top":box[1] + self.monitor["top"], "width":box[2], "height":box[3]}
+                self.box = {"left":box.left + self.monitor["left"], "top":box.top + self.monitor["top"], "width":box.width, "height":box.height}
         
         if self.mask.shape[0] != self.box["height"] or self.mask.shape[1] != self.box["width"]:
             raise Exception("Mask and region dimensions must be the same")
          
-    def grab_data(self):
+    def __grab_data(self) -> np.array :
         """Tells the sensor to take a screenshot of the actual region of the screen
 
         Returns:
@@ -92,13 +88,13 @@ class MaskSensor(Sensor):
         img = self.sct.grab(self.box)
         return np.array(img)[...,:3].astype(float)
     
-    def trigger(self):
+    def trigger(self) -> bool:
         """Determines wether the sensor is triggered or not
 
         Returns:
             bool: If the result of the operations between the screnshot an the mask is below the trigger treshold
         """
-        pw_abs = abs(self.grab_data() - self.mask).astype(np.uint8)
+        pw_abs = abs(self.__grab_data() - self.mask).astype(np.uint8)
         bool_mask =  (self.mask == self.background).all(axis=2,  keepdims=True).astype(int)
         bool_mask = np.ones(bool_mask.shape) - bool_mask
         mean_sum = np.mean(bool_mask * pw_abs)
